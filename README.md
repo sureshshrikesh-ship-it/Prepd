@@ -35,7 +35,12 @@ npm test                     # unit tests for the parsing logic
 - The test log lives in the phone's browser. Use **Copy log for Claude** to share results.
 - Each reading reports its token usage, so we can estimate the cost per receipt.
 
-## Next
+## v2 (current)
 
-- Supabase: login (Google, Apple or magic link) and Postgres tables for receipts, items, pantry, plans and the store product map.
-- Pantry and the meal-plan screens from the mockups.
+- Sign-in by email link (Supabase Auth). Receipts, items, settings and plans are saved per user with row-level security.
+- Prompt v2: unit counts, dried pulses category, "what was this?" for generic till keys, compact output.
+- Corrections feed a shared product map, so known lines are recognised for every tester.
+- Week plan: use-first list, meals per day with protein and cost, prep sessions, top-ups.
+
+Supabase project `prepd` (London). Its URL and publishable key are in `lib/config.ts`; they are public by design.
+In the Supabase dashboard set Authentication -> URL Configuration -> Site URL to the live Vercel address.
