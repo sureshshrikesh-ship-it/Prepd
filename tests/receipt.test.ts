@@ -87,3 +87,33 @@ test("plan accepts amounts as a string or a list", async () => {
   assert.equal(parsePlanReply(JSON.stringify({ summary: "", days: [day("200 g chicken")] })).days[0].meals[0].amounts, "200 g chicken");
   assert.equal(parsePlanReply(JSON.stringify({ summary: "", days: [day(["200 g chicken", "150 g rice"])] })).days[0].meals[0].amounts, "200 g chicken · 150 g rice");
 });
+
+test("UK traffic-light flags for food and drinks", async () => {
+  const { itemFlags, fromArray, dayWarnings, isLiquid } = await import("../lib/nutrition.ts");
+  const chorizo = fromArray([30, 11, 2, 2.8, 0]);
+  assert.deepEqual(itemFlags(chorizo, false).map((f) => f.label), ["High fat", "High sat fat", "High salt"]);
+  const lentils = fromArray([1.3, 0.2, 1.4, 0, 11]);
+  assert.deepEqual(itemFlags(lentils, false).map((f) => f.label), ["High fibre"]);
+  const oats = fromArray([8, 1.5, 1, 0, 4.5]);
+  assert.deepEqual(itemFlags(oats, false).map((f) => f.label), ["Source of fibre"]);
+  const cola = fromArray([0, 0, 10.6, 0, 0]);
+  assert.deepEqual(itemFlags(cola, true), []); // 10.6 g/100 ml is under the 11.25 drink threshold
+  assert.equal(isLiquid("dairy", "Whole milk 4 pints"), true);
+  assert.equal(fromArray([2, 5, 1, 0, 0]), null); // saturates above fat is impossible
+  assert.deepEqual(dayWarnings({ fibre_g: 20, fat_g: 50, sat_fat_g: 24, sugar_g: 10, salt_g: 7 }),
+    ["High in saturated fat: 24 g (daily guide 20 g)", "High in salt: 7 g (daily guide 6 g)"]);
+});
+
+test("reader output carries nutrition for food only", () => {
+  const r = parseReceiptReply(JSON.stringify({ ...wire, items: [
+    { ...wire.items[0], n: [0.3, 0.1, 3.1, 0, 1.2] },
+    { ...wire.items[1], food: false, n: [1, 1, 1, 1, 1] },
+  ] }));
+  assert.deepEqual(r.items[0].nutrition, { fat: 0.3, saturates: 0.1, sugars: 3.1, salt: 0, fibre: 1.2 });
+  assert.equal(r.items[1].nutrition, null);
+});
+
+test("at-home chips and free text combine for the plan", async () => {
+  const { atHomeText } = await import("../lib/plan.ts");
+  assert.equal(atHomeText({ at_home_items: ["Rice", "Oats"], at_home: " paneer, ,frozen parathas" }), "Rice, Oats, paneer, frozen parathas");
+});

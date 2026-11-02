@@ -6,6 +6,7 @@ import {
 } from "@/lib/receipt";
 import { callApi, getPasscode, money, supabase } from "@/lib/browser";
 import { shrinkPhoto } from "@/lib/shrink";
+import { isLiquid, itemFlags } from "@/lib/nutrition";
 
 type Meta = { model: string; promptVersion: string; ms: number; inputTokens: number; outputTokens: number; truncated: boolean; fromMap: number };
 
@@ -94,6 +95,8 @@ export function ScanReview({ userId, onSaved }: { userId: string; onSaved: (rece
         receipt_id: r.id, user_id: userId, position: i, raw: it.raw, name: it.name, category: it.category, qty: it.qty,
         pack_size: it.pack_size, units_per_pack: it.units_per_pack, unit_name: it.unit_name, line_total: it.line_total,
         is_food: it.is_food, storage: it.storage, keeps: it.keeps, protein_g: it.protein_g, confidence: it.confidence,
+        fat_100: it.nutrition?.fat ?? null, saturates_100: it.nutrition?.saturates ?? null, sugars_100: it.nutrition?.sugars ?? null,
+        salt_100: it.nutrition?.salt ?? null, fibre_100: it.nutrition?.fibre ?? null,
         source: it.source, verdict: verdicts[i],
       })));
       if (itemsErr) throw new Error(itemsErr.message);
@@ -171,6 +174,9 @@ export function ScanReview({ userId, onSaved }: { userId: string; onSaved: (rece
                       {it.units_per_pack && <span className="chip">~{it.units_per_pack} {it.unit_name ?? "units"}{it.units_per_pack > 1 ? "s" : ""}</span>}
                       <span className="chip">{it.storage} · {it.keeps}</span>
                       {it.protein_g != null && <span className="chip">~{Math.round(it.protein_g)} g protein</span>}
+                      {itemFlags(it.nutrition, isLiquid(it.category, it.name)).map((f) => (
+                        <span key={f.label} className={"chip " + (f.tone === "warn" ? "flag-warn" : "flag-good")}>{f.label}</span>
+                      ))}
                     </>)}
                     {it.source !== "map" && <span className={"chip " + it.confidence}>{it.confidence}</span>}
                   </div>

@@ -1,8 +1,9 @@
 // Receipt reading: the prompt, the expected shape, and tolerant parsing of the model's reply.
 // Self-contained (only imports zod) so it can be unit-tested with plain Node.
 import { z } from "zod";
+import { fromArray, type Nutrition } from "./nutrition.ts";
 
-export const PROMPT_VERSION = "v2";
+export const PROMPT_VERSION = "v3";
 
 export const CATEGORIES = [
   "meat", "fish", "dairy", "eggs", "veg", "fruit", "bakery", "grains_pasta", "pulses_dried",
@@ -25,13 +26,14 @@ Rules:
 - Category pulses_dried for dried beans, lentils, chickpeas and split peas; tins_jars only for tinned or jarred goods.
 - storage: "fridge", "freezer", "cupboard" or "counter". keeps: unopened shelf life at home, one of "1-2 days", "3-5 days", "1 week", "1-2 weeks", "2-4 weeks", "months", or "use-by on pack" for raw meat, raw fish and chilled ready food.
 - protein: estimated total grams of protein in everything bought on that line (all units), typical UK values; null when negligible.
+- n: for food only, typical UK nutrition per 100 g (per 100 ml for drinks and milk) as [fat, saturates, sugars, salt, fibre] in grams, e.g. [3.6,2.3,4.7,0.1,0]; null for non-food and generic keys.
 - conf: "high" clear and certain; "medium" name or size inferred; "low" hard to read or a guess.
 - note: only when something needs flagging, under 12 words; otherwise null.
 - If the year is hard to read, assume the most recent date not after today.
 - Do not invent lines you cannot see. If part of the receipt is cut off, folded or blurred, say so in warnings.
 
 Reply with only minified JSON (no spaces or line breaks between tokens) in exactly this shape:
-{"store":string|null,"branch":string|null,"date":"YYYY-MM-DD"|null,"total":number|null,"items":[{"raw":string,"name":string,"cat":${CATEGORIES.map((c) => `"${c}"`).join("|")},"qty":number,"pack":string|null,"pack_est":boolean,"units":number|null,"unit":string|null,"price":number,"food":boolean,"needs_input":boolean,"storage":string,"keeps":string,"protein":number|null,"conf":"high"|"medium"|"low","note":string|null}],"warnings":[string]}`;
+{"store":string|null,"branch":string|null,"date":"YYYY-MM-DD"|null,"total":number|null,"items":[{"raw":string,"name":string,"cat":${CATEGORIES.map((c) => `"${c}"`).join("|")},"qty":number,"pack":string|null,"pack_est":boolean,"units":number|null,"unit":string|null,"price":number,"food":boolean,"needs_input":boolean,"storage":string,"keeps":string,"protein":number|null,"n":[number,number,number,number,number]|null,"conf":"high"|"medium"|"low","note":string|null}],"warnings":[string]}`;
 }
 
 const num = z.preprocess((v) => (typeof v === "string" ? Number(v.replace(/[£,]/g, "")) : v), z.number().finite());
@@ -54,6 +56,7 @@ const WireItem = z.object({
   storage: z.enum(["fridge", "freezer", "cupboard", "counter"]).catch("cupboard"),
   keeps: z.string().max(40).catch("unknown"),
   protein: nullableNum,
+  n: z.array(z.coerce.number()).length(5).nullable().catch(null),
   conf: z.enum(["high", "medium", "low"]).catch("low"),
   note: nullableStr,
 });
@@ -82,6 +85,7 @@ export type ReceiptItem = {
   storage: "fridge" | "freezer" | "cupboard" | "counter";
   keeps: string;
   protein_g: number | null;
+  nutrition: Nutrition | null;
   confidence: "high" | "medium" | "low";
   note: string | null;
   source: "model" | "map" | "user";
@@ -129,6 +133,7 @@ export function parseReceiptReply(text: string): Receipt {
       storage: i.storage,
       keeps: i.keeps,
       protein_g: i.protein,
+      nutrition: i.food ? fromArray(i.n) : null,
       confidence: i.conf,
       note: i.note,
       source: "model",

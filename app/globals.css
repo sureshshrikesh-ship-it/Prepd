@@ -106,3 +106,8 @@ fieldset.field legend { padding: 0; margin-bottom: 6px; }
 .warn-text { color: var(--warn-text); font-weight: 600; margin: 0; }
 .hist-actions { display: flex; gap: 12px; align-items: center; }
 .small { font-size: 13px; }
+.chip.flag-warn { background: var(--warn-soft); color: var(--warn-text); font-weight: 700; }
+.chip.flag-good { background: var(--accent-soft); color: var(--accent-text); font-weight: 700; }
+.chip-group { display: flex; flex-direction: column; gap: 6px; }
+.pill { text-transform: none; }
+.bar.fibre > div { background: var(--warn-line); }

@@ -2,6 +2,7 @@
 import { useState } from "react";
 import type { Plan } from "@/lib/plan";
 import { money } from "@/lib/browser";
+import { DAILY, dayWarnings } from "@/lib/nutrition";
 
 export function PlanView({ plan, target }: { plan: Plan; target: number }) {
   const [day, setDay] = useState(0);
@@ -45,7 +46,7 @@ export function PlanView({ plan, target }: { plan: Plan; target: number }) {
               <article key={i} className="meal">
                 <div className="top">
                   <span className="eyebrow">{m.slot}{m.from_prep ? " · prepped" : m.minutes ? ` · ${m.minutes} min` : ""}</span>
-                  <span className="muted small">{Math.round(m.protein_g)} g · {money(m.cost_gbp)}</span>
+                  <span className="muted small">{Math.round(m.protein_g)} g protein{m.fibre_g ? ` · ${Math.round(m.fibre_g)} g fibre` : ""} · {money(m.cost_gbp)}</span>
                 </div>
                 <div className="name">{m.name}</div>
                 {m.amounts && <p className="muted small">{m.amounts}</p>}
@@ -55,6 +56,9 @@ export function PlanView({ plan, target }: { plan: Plan; target: number }) {
               <div className="top small"><span>{d.day} protein</span><span>{Math.round(d.protein_g)} / {target} g</span></div>
               <div className="bar"><div style={{ width: `${Math.min(100, (d.protein_g / target) * 100)}%` }} /></div>
               {d.gap_g > 0 && <p className="warn-text small">{Math.round(d.gap_g)} g short. See top-ups below.</p>}
+              <div className="top small"><span>Fibre from these meals</span><span>{Math.round(d.fibre_g)} g · daily guide {DAILY.fibre} g</span></div>
+              <div className="bar fibre"><div style={{ width: `${Math.min(100, (d.fibre_g / DAILY.fibre) * 100)}%` }} /></div>
+              {dayWarnings(d).map((w) => <p key={w} className="warn-text small">{w}</p>)}
             </div>
           </div>
         )}
@@ -80,7 +84,7 @@ export function PlanView({ plan, target }: { plan: Plan; target: number }) {
         </div>
       )}
       {plan.notes.length > 0 && <ul className="list muted small">{plan.notes.map((n, i) => <li key={i}>{n}</li>)}</ul>}
-      <p className="muted small">Shelf lives are typical estimates. The use-by date on the pack always wins.</p>
+      <p className="muted small">Shelf lives and nutrition are typical estimates, not your pack&apos;s label. The use-by date on the pack always wins.</p>
     </section>
   );
 }

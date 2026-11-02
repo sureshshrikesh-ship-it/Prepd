@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
-import { DEFAULT_SETTINGS, MEALS, SettingsSchema, WEEKDAYS, type Settings } from "@/lib/plan";
+import { AT_HOME_GROUPS, DEFAULT_SETTINGS, MEALS, SettingsSchema, WEEKDAYS, type Settings } from "@/lib/plan";
 import { getPasscode, setPasscode, supabase } from "@/lib/browser";
 
 function toggle<T>(list: T[], v: T): T[] {
@@ -68,8 +68,27 @@ export function SettingsPanel({ userId, onSaved }: { userId: string; onSaved?: (
           ))}
         </div>
       </fieldset>
-      <label className="field" htmlFor="athome">Already at home
-        <input id="athome" value={s.at_home} placeholder="e.g. rice, oats, spices, oil" onChange={(e) => setS({ ...s, at_home: e.target.value })} />
+      <fieldset className="field">
+        <legend>Already at home <span className="muted">({s.at_home_items.length} selected)</span></legend>
+        <div className="stack">
+          {AT_HOME_GROUPS.map((g) => (
+            <div key={g.label} className="chip-group">
+              <span className="eyebrow">{g.label}</span>
+              <div className="pills">
+                {g.items.map((item) => {
+                  const on = s.at_home_items.includes(item);
+                  return (
+                    <button key={item} type="button" className={"pill" + (on ? " on" : "")} aria-pressed={on}
+                      onClick={() => setS({ ...s, at_home_items: toggle(s.at_home_items, item) })}>{item}</button>
+                  );
+                })}
+              </div>
+            </div>
+          ))}
+        </div>
+      </fieldset>
+      <label className="field" htmlFor="athome">Anything else at home
+        <input id="athome" value={s.at_home} placeholder="e.g. paneer, frozen parathas" onChange={(e) => setS({ ...s, at_home: e.target.value })} />
       </label>
       <label className="field" htmlFor="avoid">Avoid
         <input id="avoid" value={s.avoid} placeholder="e.g. pork, mushrooms" onChange={(e) => setS({ ...s, avoid: e.target.value })} />

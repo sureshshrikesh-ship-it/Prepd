@@ -17,13 +17,20 @@ export async function POST(req: Request) {
   const [{ data: receipt }, { data: items, error: itemsErr }, { data: settingsRow }] = await Promise.all([
     g.db.from("receipts").select("id,receipt_date,created_at").eq("id", body.receiptId).maybeSingle(),
     g.db.from("receipt_items")
-      .select("name,category,qty,pack_size,units_per_pack,unit_name,line_total,storage,keeps,protein_g,is_food")
+      .select("name,category,qty,pack_size,units_per_pack,unit_name,line_total,storage,keeps,protein_g,is_food,fat_100,saturates_100,sugars_100,salt_100,fibre_100")
       .eq("receipt_id", body.receiptId).order("position"),
     g.db.from("user_settings").select("*").maybeSingle(),
   ]);
   if (!receipt) return fail(404, "Receipt not found.");
   if (itemsErr) return fail(500, "Couldn't load the receipt's items.");
-  const food = (items ?? []).filter((i) => i.is_food).map((i) => ({ ...i, line_total: Number(i.line_total) || 0 }));
+  const food = (items ?? []).filter((i) => i.is_food).map((i) => ({
+    ...i,
+    line_total: Number(i.line_total) || 0,
+    nutrition: i.fat_100 == null ? null : {
+      fat: Number(i.fat_100), saturates: Number(i.saturates_100), sugars: Number(i.sugars_100),
+      salt: Number(i.salt_100), fibre: Number(i.fibre_100),
+    },
+  }));
   if (food.length === 0) return fail(400, "This receipt has no food on it to plan with.");
 
   const settings = SettingsSchema.parse(settingsRow ?? {});
