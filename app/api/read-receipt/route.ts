@@ -2,7 +2,7 @@ import { PROMPT_VERSION, applyProductMap, parseReceiptReply, receiptPrompt, stor
 import { askClaude, fail, gate } from "@/lib/server";
 
 export const runtime = "nodejs";
-export const maxDuration = 90;
+export const maxDuration = 120;
 
 const MAX_BYTES = 4 * 1024 * 1024; // Vercel caps request bodies at 4.5 MB; the client shrinks photos well below this.
 const TYPES = new Set(["image/jpeg", "image/png", "image/webp"]);
@@ -30,7 +30,7 @@ export async function POST(req: Request) {
       { type: "image", source: { type: "base64", media_type: file.type as "image/jpeg" | "image/png" | "image/webp", data } },
       { type: "text", text: receiptPrompt(today) },
     ],
-    8000,
+    20000,
   );
   if (res instanceof Response) return res;
 

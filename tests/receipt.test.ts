@@ -73,3 +73,17 @@ test("plan starts on the next planned weekday after the shop", () => {
   assert.equal(startDayAfter(new Date("2026-11-01T12:00:00Z"), ["Mon", "Tue"]), "Mon 2026-11-02"); // shop on Sunday
   assert.equal(startDayAfter(new Date("2026-10-30T12:00:00Z"), ["Mon"]), "Mon 2026-11-02"); // shop on Friday
 });
+
+test("planned days come back in week order", () => {
+  const s = SettingsSchema.parse({ plan_days: ["Mon", "Tue", "Wed", "Fri", "Thu"], prep_days: ["Wed", "Sun"] });
+  assert.deepEqual(s.plan_days, ["Mon", "Tue", "Wed", "Thu", "Fri"]);
+  assert.deepEqual(s.prep_days, ["Wed", "Sun"]);
+});
+
+test("plan accepts amounts as a string or a list", async () => {
+  const { parsePlanReply } = await import("../lib/plan.ts");
+  const day = (amounts: unknown) => ({ day: "Mon", protein_g: 50, cost_gbp: 2, gap_g: 0,
+    meals: [{ slot: "lunch", name: "Chicken rice", amounts, protein_g: 50, cost_gbp: 2, minutes: 0, from_prep: true }] });
+  assert.equal(parsePlanReply(JSON.stringify({ summary: "", days: [day("200 g chicken")] })).days[0].meals[0].amounts, "200 g chicken");
+  assert.equal(parsePlanReply(JSON.stringify({ summary: "", days: [day(["200 g chicken", "150 g rice"])] })).days[0].meals[0].amounts, "200 g chicken · 150 g rice");
+});

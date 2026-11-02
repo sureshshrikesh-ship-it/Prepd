@@ -2,7 +2,7 @@ import { PLAN_PROMPT_VERSION, SettingsSchema, parsePlanReply, planPrompt, startD
 import { askClaude, fail, gate } from "@/lib/server";
 
 export const runtime = "nodejs";
-export const maxDuration = 180;
+export const maxDuration = 300;
 
 // Builds a week plan from a receipt the user saved. Reads the receipt with the user's own
 // session (RLS), so nobody can plan from someone else's shop.
@@ -31,7 +31,7 @@ export async function POST(req: Request) {
   const started = Date.now();
   const res = await askClaude(
     planPrompt(food, settings, shop.toISOString().slice(0, 10), startDayAfter(shop, settings.plan_days)),
-    12000,
+    32000,
   );
   if (res instanceof Response) return res;
 

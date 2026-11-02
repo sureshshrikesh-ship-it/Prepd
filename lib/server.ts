@@ -37,11 +37,14 @@ export type ClaudeResult = { text: string; model: string; inputTokens: number; o
 export async function askClaude(content: Anthropic.MessageParam["content"], maxTokens: number): Promise<ClaudeResult | Response> {
   const client = new Anthropic();
   try {
-    const reply = await client.messages.create({
+    // Streaming lets a long reply run past the SDK's non-streaming time limit.
+    const reply = await client.messages.stream({
       model: process.env.ANTHROPIC_MODEL || DEFAULT_MODEL,
       max_tokens: maxTokens,
       messages: [{ role: "user", content }],
-    });
+    }).finalMessage();
+    const kinds = reply.content.map((b) => b.type).join(",");
+    console.log("Claude reply", { model: reply.model, stop: reply.stop_reason, out: reply.usage.output_tokens, blocks: kinds });
     return {
       text: reply.content.map((b) => (b.type === "text" ? b.text : "")).join(""),
       model: reply.model,

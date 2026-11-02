@@ -48,7 +48,7 @@ export default function Home() {
   async function buildPlan(receiptId: string) {
     setTab("week");
     setPlan(null);
-    setPlanning({ text: "Building your week… this takes about a minute." });
+    setPlanning({ text: "Building your week… this can take 1–3 minutes. Keep this screen open." });
     try {
       const out = await callApi<{ plan: Plan; planId: string | null }>("/api/plan", JSON.stringify({ receiptId }), true);
       setPlan({ id: out.planId ?? "new", created_at: new Date().toISOString(), plan: out.plan, settings, receipt_id: receiptId });

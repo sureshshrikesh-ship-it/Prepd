@@ -48,7 +48,7 @@ export function PlanView({ plan, target }: { plan: Plan; target: number }) {
                   <span className="muted small">{Math.round(m.protein_g)} g · {money(m.cost_gbp)}</span>
                 </div>
                 <div className="name">{m.name}</div>
-                {m.amounts.length > 0 && <p className="muted small">{m.amounts.join(" · ")}</p>}
+                {m.amounts && <p className="muted small">{m.amounts}</p>}
               </article>
             ))}
             <div className="bar-row">

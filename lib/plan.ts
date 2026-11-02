@@ -2,16 +2,22 @@
 import { z } from "zod";
 import { extractJson, type ReceiptItem } from "./receipt.ts";
 
-export const PLAN_PROMPT_VERSION = "p1";
+export const PLAN_PROMPT_VERSION = "p2";
 export const WEEKDAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"] as const;
 export const MEALS = ["breakfast", "lunch", "snack", "dinner"] as const;
+type Weekday = (typeof WEEKDAYS)[number];
+
+/** Mon..Sun order, no duplicates, whatever order the days were tapped in. */
+export function inWeekOrder(days: Weekday[]): Weekday[] {
+  return WEEKDAYS.filter((d) => days.includes(d));
+}
 
 export const SettingsSchema = z.object({
   protein_g: z.coerce.number().int().min(40).max(400).catch(150),
   budget_gbp: z.coerce.number().min(0).max(500).nullable().catch(null),
-  prep_days: z.array(z.enum(WEEKDAYS)).max(7).catch(["Sun", "Wed"]),
+  prep_days: z.array(z.enum(WEEKDAYS)).max(7).transform(inWeekOrder).catch(["Sun", "Wed"]),
   meals: z.array(z.enum(MEALS)).min(1).max(4).catch(["lunch", "dinner"]),
-  plan_days: z.array(z.enum(WEEKDAYS)).min(1).max(7).catch(["Mon", "Tue", "Wed", "Thu", "Fri"]),
+  plan_days: z.array(z.enum(WEEKDAYS)).min(1).max(7).transform(inWeekOrder).catch(["Mon", "Tue", "Wed", "Thu", "Fri"]),
   at_home: z.string().max(300).catch(""),
   avoid: z.string().max(300).catch(""),
 });
@@ -47,10 +53,10 @@ Rules:
 - cost_gbp per meal is the share of the purchase price used; at-home items count £0.
 - If the food can't reach the protein target on a day, say so in that day's gap_g and suggest the cheapest top-up in top_up.
 - Leave unused items alone; list anything bought but not used this week in leftover.
-- Keep text short: meal names under 8 words, steps under 20 words each.
+- Be brief, the screen is a phone: summary one sentence; meal names under 7 words; amounts one short line per meal; prep steps under 18 words, at most 8 per session; use_first at most 6 most urgent items; top_up at most 3; leftover names only; notes at most 2.
 
 Reply with only minified JSON in exactly this shape:
-{"summary":string,"use_first":[{"item":string,"by":string,"action":string}],"prep":[{"day":string,"minutes":number,"steps":[string]}],"days":[{"day":string,"meals":[{"slot":string,"name":string,"amounts":[string],"protein_g":number,"cost_gbp":number,"minutes":number,"from_prep":boolean}],"protein_g":number,"cost_gbp":number,"gap_g":number}],"top_up":[string],"leftover":[string],"notes":[string]}`;
+{"summary":string,"use_first":[{"item":string,"by":string,"action":string}],"prep":[{"day":string,"minutes":number,"steps":[string]}],"days":[{"day":string,"meals":[{"slot":string,"name":string,"amounts":string,"protein_g":number,"cost_gbp":number,"minutes":number,"from_prep":boolean}],"protein_g":number,"cost_gbp":number,"gap_g":number}],"top_up":[string],"leftover":[string],"notes":[string]}`;
 }
 
 const n = z.coerce.number().finite().catch(0);
@@ -62,7 +68,8 @@ const PlanSchema = z.object({
   days: z.array(z.object({
     day: s(20),
     meals: z.array(z.object({
-      slot: s(20), name: s(120), amounts: z.array(s(120)).max(12).catch([]),
+      slot: s(20), name: s(120),
+      amounts: z.union([z.string().max(300), z.array(z.string().max(120)).max(12).transform((a) => a.join(" · "))]).catch(""),
       protein_g: n, cost_gbp: n, minutes: n, from_prep: z.boolean().catch(false),
     })).max(6),
     protein_g: n, cost_gbp: n, gap_g: n,
