@@ -111,3 +111,20 @@ fieldset.field legend { padding: 0; margin-bottom: 6px; }
 .chip-group { display: flex; flex-direction: column; gap: 6px; }
 .pill { text-transform: none; }
 .bar.fibre > div { background: var(--warn-line); }
+.meal.done { background: var(--accent-soft); border-color: var(--accent); }
+.cook-btn { min-height: 44px; align-self: flex-start; font-size: 15px; padding: 0 16px; }
+.cooked-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.cooked-tag { font-size: 13px; font-weight: 700; color: var(--accent-text); }
+.item.pantry { gap: 8px; }
+.stock-row { display: flex; align-items: center; gap: 10px; }
+.stock-row .qty { font-variant-numeric: tabular-nums; font-weight: 600; min-width: 72px; }
+.small-bar { flex: 1; height: 6px; }
+.pantry-actions { display: flex; flex-wrap: wrap; gap: 6px; }
+.mini { min-height: 40px; padding: 0 12px; border-radius: 10px; border: 1.5px solid var(--line); background: var(--bg); color: var(--fg); font: 600 13px var(--sans); cursor: pointer; }
+.mini.warn { color: var(--bad-text); }
+.mini:disabled { opacity: .5; }
+.chip.use-bad { background: var(--bad-soft); color: var(--bad-text); font-weight: 700; }
+.chip.use-warn { background: var(--warn-soft); color: var(--warn-text); font-weight: 700; }
+.chip.use-ok { background: var(--accent-soft); color: var(--accent-text); }
+.chip.use-calm { background: var(--surface); color: var(--muted); }
+.field select { width: 100%; }

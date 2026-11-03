@@ -4,7 +4,7 @@ import {
   CATEGORIES, accuracy, rawKey, storeKey, sumOfLines, totalGap,
   type Category, type Receipt, type ReceiptItem, type Verdict,
 } from "@/lib/receipt";
-import { callApi, getPasscode, money, supabase } from "@/lib/browser";
+import { addReceiptToPantry, callApi, getPasscode, money, supabase } from "@/lib/browser";
 import { shrinkPhoto } from "@/lib/shrink";
 import { isLiquid, itemFlags } from "@/lib/nutrition";
 
@@ -109,7 +109,8 @@ export function ScanReview({ userId, onSaved }: { userId: string; onSaved: (rece
         p_pack_size: it.pack_size, p_units_per_pack: it.units_per_pack, p_unit_name: it.unit_name,
       })));
 
-      setSaveMsg("Saved.");
+      const added = await addReceiptToPantry(r.id).catch((e) => { console.error("pantry", e); return 0; });
+      setSaveMsg(added ? `Saved. ${added} items added to your fridge.` : "Saved.");
       onSaved(r.id);
     } catch (e) {
       console.error(e);

@@ -1,11 +1,29 @@
 "use client";
 import { useState } from "react";
 import type { Plan } from "@/lib/plan";
-import { money } from "@/lib/browser";
+import { money, supabase } from "@/lib/browser";
 import { DAILY, dayWarnings } from "@/lib/nutrition";
 
-export function PlanView({ plan, target }: { plan: Plan; target: number }) {
+type Cooked = Record<string, string>;
+
+export function PlanView({ plan, target, planId, cooked: cookedIn, onCooked }: {
+  plan: Plan; target: number; planId?: string; cooked?: Cooked; onCooked?: () => void;
+}) {
   const [day, setDay] = useState(0);
+  const [cooked, setCooked] = useState<Cooked>(cookedIn ?? {});
+  const [busyKey, setBusyKey] = useState<string | null>(null);
+  const [cookMsg, setCookMsg] = useState("");
+
+  async function cook(key: string, undo: boolean) {
+    if (!planId || planId === "new") return;
+    setBusyKey(key);
+    setCookMsg("");
+    const { data, error } = await supabase().rpc("cook_meal", { p_plan: planId, p_key: key, p_undo: undo });
+    setBusyKey(null);
+    if (error) { setCookMsg("Couldn't update your fridge. Try again."); return; }
+    setCooked((data ?? {}) as Cooked);
+    onCooked?.();
+  }
   const d = plan.days[Math.min(day, plan.days.length - 1)];
   const avgCost = plan.days.length ? plan.days.reduce((a, x) => a + x.cost_gbp, 0) / Math.max(1, plan.days.reduce((a, x) => a + x.meals.length, 0)) : 0;
   const daysHit = plan.days.filter((x) => x.protein_g >= target * 0.95).length;
@@ -42,16 +60,33 @@ export function PlanView({ plan, target }: { plan: Plan; target: number }) {
         </div>
         {d && (
           <div role="tabpanel" className="stack">
-            {d.meals.map((m, i) => (
-              <article key={i} className="meal">
+            {d.meals.map((m, i) => {
+              const key = `${day}-${i}`;
+              const done = Boolean(cooked[key]);
+              return (
+              <article key={i} className={"meal" + (done ? " done" : "")}>
                 <div className="top">
                   <span className="eyebrow">{m.slot}{m.from_prep ? " · prepped" : m.minutes ? ` · ${m.minutes} min` : ""}</span>
                   <span className="muted small">{Math.round(m.protein_g)} g protein{m.fibre_g ? ` · ${Math.round(m.fibre_g)} g fibre` : ""} · {money(m.cost_gbp)}</span>
                 </div>
                 <div className="name">{m.name}</div>
                 {m.amounts && <p className="muted small">{m.amounts}</p>}
+                {planId && planId !== "new" && (m.uses ?? []).length > 0 && (
+                  done ? (
+                    <div className="cooked-row">
+                      <span className="cooked-tag">Cooked · fridge updated</span>
+                      <button type="button" className="link small" disabled={busyKey === key} onClick={() => cook(key, true)}>Undo</button>
+                    </div>
+                  ) : (
+                    <button type="button" className="btn ghost cook-btn" disabled={busyKey === key} onClick={() => cook(key, false)}>
+                      {busyKey === key ? "Updating…" : "Cooked it"}
+                    </button>
+                  )
+                )}
               </article>
-            ))}
+              );
+            })}
+            {cookMsg && <div className="status err" role="alert">{cookMsg}</div>}
             <div className="bar-row">
               <div className="top small"><span>{d.day} protein</span><span>{Math.round(d.protein_g)} / {target} g</span></div>
               <div className="bar"><div style={{ width: `${Math.min(100, (d.protein_g / target) * 100)}%` }} /></div>
