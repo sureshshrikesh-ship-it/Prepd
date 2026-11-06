@@ -7,14 +7,24 @@ import {
 import { addReceiptToPantry, callApi, getPasscode, money, supabase } from "@/lib/browser";
 import { shrinkPhoto } from "@/lib/shrink";
 import { isLiquid, itemFlags } from "@/lib/nutrition";
+import { SnapItems } from "@/components/SnapItems";
+import type { SnapItem } from "@/lib/snap";
 
 type Meta = { model: string; promptVersion: string; ms: number; inputTokens: number; outputTokens: number; truncated: boolean; fromMap: number };
+type SnapOut =
+  | { kind: "receipt"; receipt: Receipt; meta: Meta }
+  | { kind: "shopping" | "fridge"; items: SnapItem[]; notes: string[]; meta: Meta };
+const HINT = "Snap a receipt, your shopping spread out on the table, or your open fridge.";
 
-export function ScanReview({ userId, onSaved }: { userId: string; onSaved: (receiptId: string) => void }) {
+export function ScanReview({ userId, onSaved, onFridgeUpdated }: {
+  userId: string; onSaved: (receiptId: string) => void; onFridgeUpdated: (msg: string) => void;
+}) {
   const [file, setFile] = useState<File | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
-  const [status, setStatus] = useState<{ text: string; err?: boolean }>({ text: "Lay the receipt flat in good light, with every line in frame." });
+  const [status, setStatus] = useState<{ text: string; err?: boolean }>({ text: HINT });
+  const [snap, setSnap] = useState<Extract<SnapOut, { kind: "shopping" | "fridge" }> | null>(null);
+  const [snapId, setSnapId] = useState(0);
   const [receipt, setReceipt] = useState<Receipt | null>(null);
   const [meta, setMeta] = useState<Meta | null>(null);
   const [items, setItems] = useState<ReceiptItem[]>([]);
@@ -31,7 +41,8 @@ export function ScanReview({ userId, onSaved }: { userId: string; onSaved: (rece
     setFile(f);
     setPreview(URL.createObjectURL(f));
     setReceipt(null);
-    setStatus({ text: "Ready. Tap Read receipt." });
+    setSnap(null);
+    setStatus({ text: "Ready. Tap Read photo." });
   }
 
   async function read() {
@@ -41,12 +52,21 @@ export function ScanReview({ userId, onSaved }: { userId: string; onSaved: (rece
     abortRef.current = ctl;
     setBusy(true);
     setSaveMsg("");
-    setStatus({ text: "Reading the receipt… usually 15–45 seconds." });
+    setSnap(null);
+    setReceipt(null);
+    setStatus({ text: "Reading your photo… usually 20–60 seconds." });
     try {
       const small = await shrinkPhoto(file);
       const body = new FormData();
-      body.append("image", small, "receipt.jpg");
-      const out = await callApi<{ receipt: Receipt; meta: Meta }>("/api/read-receipt", body, false, ctl.signal);
+      body.append("image", small, "photo.jpg");
+      const out = await callApi<SnapOut>("/api/snap", body, false, ctl.signal);
+      if (out.kind !== "receipt") {
+        setSnap(out);
+        setSnapId((n) => n + 1);
+        const asks = out.items.filter((i) => i.question).length;
+        setStatus({ text: `Found ${out.items.length} item${out.items.length === 1 ? "" : "s"}${asks ? `, with ${asks} quick question${asks === 1 ? "" : "s"}` : ""}.` });
+        return;
+      }
       setReceipt(out.receipt);
       setItems(out.receipt.items);
       setMeta(out.meta);
@@ -125,20 +145,25 @@ export function ScanReview({ userId, onSaved }: { userId: string; onSaved: (rece
   return (
     <>
       <section className="panel" aria-labelledby="add-h">
-        <h2 id="add-h">Add this week’s shop</h2>
+        <h2 id="add-h">Snap your food</h2>
         <div className="drop">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          {preview && <img src={preview} alt="The receipt photo you picked" />}
+          {preview && <img src={preview} alt="The photo you picked" />}
           <input id="photo" className="file-input" type="file" accept="image/*" onChange={(e) => pick(e.target.files?.[0])} />
           <div className="actions">
             <label htmlFor="photo" className="btn ghost">{file ? "Change photo" : "Take or choose photo"}</label>
-            <button className="btn" type="button" disabled={!file || busy} onClick={read}>Read receipt</button>
+            <button className="btn" type="button" disabled={!file || busy} onClick={read}>Read photo</button>
             {busy && <button className="btn ghost" type="button" onClick={() => abortRef.current?.abort()}>Stop</button>}
           </div>
           <div className={"status" + (status.err ? " err" : "")} role="status">{status.text}</div>
         </div>
-        <p className="muted small">Your photo is read and then discarded. Card and payment lines are ignored.</p>
+        <p className="muted small">Shopping photo tips: spread items out with labels facing up; take two photos for a big shop. Photos are read and then discarded.</p>
       </section>
+
+      {snap && (
+        <SnapItems key={snapId} kind={snap.kind} items={snap.items} notes={snap.notes}
+          onDone={(msg) => { setSnap(null); setFile(null); setPreview(null); setStatus({ text: HINT }); onFridgeUpdated(msg); }} />
+      )}
 
       {receipt && (
         <section className="panel" aria-labelledby="res-h">

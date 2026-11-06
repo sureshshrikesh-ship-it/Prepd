@@ -49,7 +49,7 @@ export function FridgeView({ onPlan }: { onPlan: () => void }) {
       <QuickLog onApplied={load} />
 
       {items.length === 0 ? (
-        <p className="muted">Empty for now. Scan a receipt in New shop and its food lands here, or add things you already have.</p>
+        <p className="muted">Empty for now. Snap your fridge or your shopping on the Add food tab, tell it below what you have, or add items one by one.</p>
       ) : (
         <>
           {soon.length > 0 && (

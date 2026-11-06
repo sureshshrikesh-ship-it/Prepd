@@ -23,6 +23,7 @@ export default function Home() {
   const [history, setHistory] = useState<{ receipts: ReceiptRow[]; plans: PlanRow[] }>({ receipts: [], plans: [] });
   const [settings, setSettings] = useState<Settings>(DEFAULT_SETTINGS);
   const [histMsg, setHistMsg] = useState("");
+  const [fridgeMsg, setFridgeMsg] = useState("");
 
   useEffect(() => {
     const sb = supabase();
@@ -88,8 +89,8 @@ export default function Home() {
       {!session ? <SignIn /> : (
         <>
           <nav className="tabs main" aria-label="Sections">
-            {([["week", "Week"], ["fridge", "Fridge"], ["shop", "New shop"], ["history", "History"], ["settings", "Settings"]] as [Tab, string][]).map(([k, label]) => (
-              <button key={k} type="button" className={"tab" + (tab === k ? " on" : "")} aria-current={tab === k ? "page" : undefined} onClick={() => setTab(k)}>{label}</button>
+            {([["week", "Week"], ["fridge", "Fridge"], ["shop", "Add food"], ["history", "History"], ["settings", "Settings"]] as [Tab, string][]).map(([k, label]) => (
+              <button key={k} type="button" className={"tab" + (tab === k ? " on" : "")} aria-current={tab === k ? "page" : undefined} onClick={() => { setTab(k); setFridgeMsg(""); }}>{label}</button>
             ))}
           </nav>
 
@@ -100,16 +101,22 @@ export default function Home() {
                 : !planning && (
                   <section className="panel">
                     <h2>No plan yet</h2>
-                    <p className="muted">Scan this week’s receipt and Prepd builds your meals, prep sessions and protein for the week.</p>
-                    <button className="btn" type="button" onClick={() => setTab("shop")}>Add this week’s shop</button>
+                    <p className="muted">Snap your shopping, your fridge or a receipt, and Prepd builds your meals, prep sessions and protein from what you have.</p>
+                    <button className="btn" type="button" onClick={() => setTab("shop")}>Snap your food</button>
                   </section>
                 )}
             </>
           )}
 
-          {tab === "fridge" && <FridgeView onPlan={() => buildPlan(null)} />}
+          {tab === "fridge" && (
+            <>
+              {fridgeMsg && <div className="check ok" role="status">{fridgeMsg}</div>}
+              <FridgeView onPlan={() => buildPlan(null)} />
+            </>
+          )}
 
-          {tab === "shop" && <ScanReview userId={session.user.id} onSaved={buildPlan} />}
+          {tab === "shop" && <ScanReview userId={session.user.id} onSaved={buildPlan}
+            onFridgeUpdated={(msg) => { setFridgeMsg(msg); setTab("fridge"); }} />}
 
           {tab === "history" && (
             <section className="panel" aria-labelledby="hist-h">
