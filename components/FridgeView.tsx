@@ -1,6 +1,7 @@
 "use client";
 import { useCallback, useEffect, useState } from "react";
 import { supabase } from "@/lib/browser";
+import { QuickLog } from "@/components/QuickLog";
 import { daysLeft, formatQty, stepFor, useByFrom, useByLabel, type PantryItem, type Storage, type Unit } from "@/lib/pantry";
 
 const PLACES: { key: Storage; label: string }[] = [
@@ -44,6 +45,8 @@ export function FridgeView({ onPlan }: { onPlan: () => void }) {
         <h2 id="fridge-h">Your fridge</h2>
         <span className="muted small">{items.length} item{items.length === 1 ? "" : "s"}</span>
       </div>
+
+      <QuickLog onApplied={load} />
 
       {items.length === 0 ? (
         <p className="muted">Empty for now. Scan a receipt in New shop and its food lands here, or add things you already have.</p>

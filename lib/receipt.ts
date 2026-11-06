@@ -3,7 +3,7 @@
 import { z } from "zod";
 import { fromArray, type Nutrition } from "./nutrition.ts";
 
-export const PROMPT_VERSION = "v3";
+export const PROMPT_VERSION = "v4";
 
 export const CATEGORIES = [
   "meat", "fish", "dairy", "eggs", "veg", "fruit", "bakery", "grains_pasta", "pulses_dried",
@@ -22,7 +22,7 @@ Rules:
 - is_food false for flowers, cleaning, toiletries, bags, homeware and generic non-food keys. A VAT code unlike most lines is only a hint.
 - Ignore payment, card, terminal, loyalty, change and VAT summary lines. Never output card numbers or merchant or terminal IDs.
 - pack: copy the printed size ("1KG", "4PT", "7PK"); otherwise the usual pack for that store with pack_est true; null if unknown.
-- units: how many countable pieces one pack holds when people count them (eggs, slices, fillets, tins, rolls, bananas, bars), with unit as the singular noun ("slice", "egg"). Null for things measured by weight or volume (rice, milk, spinach).
+- units: how many countable pieces one pack holds when people count them (eggs, slices, fillets, tins, rolls, bars, and whole fruit and veg such as onions, carrots, potatoes, peppers, tomatoes, lemons, apples, bananas, garlic bulbs), with unit as the singular noun ("onion", "egg"). For loose or bagged produce sold by weight, estimate the count from typical sizes (1 kg carrots ~ 13, 1 kg onions ~ 7). Null for things measured by weight or volume (rice, milk, spinach, mince).
 - Category pulses_dried for dried beans, lentils, chickpeas and split peas; tins_jars only for tinned or jarred goods.
 - storage: "fridge", "freezer", "cupboard" or "counter". keeps: unopened shelf life at home, one of "1-2 days", "3-5 days", "1 week", "1-2 weeks", "2-4 weeks", "months", or "use-by on pack" for raw meat, raw fish and chilled ready food.
 - protein: estimated total grams of protein in everything bought on that line (all units), typical UK values; null when negligible.

@@ -43,7 +43,7 @@ export const money = (n: number | null | undefined) => "£" + (Number(n) || 0).t
  * (receipt_item_id is unique). Returns how many items were added.
  */
 export async function addReceiptToPantry(receiptId: string): Promise<number> {
-  const { parsePack, useByFrom } = await import("./pantry");
+  const { asCount, parsePack, useByFrom } = await import("./pantry");
   const db = supabase();
   const [{ data: r }, { data: items, error }] = await Promise.all([
     db.from("receipts").select("receipt_date,created_at").eq("id", receiptId).maybeSingle(),
@@ -57,7 +57,8 @@ export async function addReceiptToPantry(receiptId: string): Promise<number> {
   const done = new Set((existing ?? []).map((e) => e.receipt_item_id));
   const shop = new Date(r.receipt_date ?? r.created_at);
   const rows = items.filter((i) => !done.has(i.id)).map((i) => {
-    const amt = parsePack(i.pack_size, i.qty, i.units_per_pack == null ? null : Number(i.units_per_pack), i.unit_name);
+    const packed = parsePack(i.pack_size, i.qty, i.units_per_pack == null ? null : Number(i.units_per_pack), i.unit_name);
+    const amt = asCount(i.name, packed.amount, packed.unit) ?? packed;
     const storage = (["fridge", "freezer", "cupboard", "counter"].includes(i.storage) ? i.storage : "cupboard") as "fridge";
     return {
       name: i.name, category: i.category, storage, unit: amt.unit, unit_label: amt.label,

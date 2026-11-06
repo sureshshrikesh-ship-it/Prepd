@@ -116,3 +116,49 @@ export function stepFor(unit: Unit, qty: number): number {
   if (unit === "pack") return 0.5;
   return 1;
 }
+
+// Fruit and veg people count rather than weigh, with a typical UK weight each (grams).
+// Longest names first so "sweet potato" wins over "potato".
+const COUNTABLE: [RegExp, string, number][] = [
+  [/\bsweet potato(es)?\b/, "sweet potato", 200],
+  [/\bspring onions?\b/, "spring onion", 15],
+  [/\b(red |white |brown )?onions?\b/, "onion", 150],
+  [/\bcarrots?\b/, "carrot", 75],
+  [/\bpotato(es)?\b/, "potato", 170],
+  [/\b(salad |vine |large vine |plum )?tomato(es)?\b/, "tomato", 85],
+  [/\bpeppers?\b/, "pepper", 160],
+  [/\bcourgettes?\b/, "courgette", 200],
+  [/\baubergines?\b/, "aubergine", 250],
+  [/\bcucumbers?\b/, "cucumber", 300],
+  [/\bleeks?\b/, "leek", 200],
+  [/\bparsnips?\b/, "parsnip", 100],
+  [/\bbeetroots?\b/, "beetroot", 100],
+  [/\blemons?\b/, "lemon", 100],
+  [/\blimes?\b/, "lime", 65],
+  [/\boranges?\b/, "orange", 180],
+  [/\b(easy peelers?|satsumas?|clementines?|mandarins?)\b/, "easy peeler", 80],
+  [/\bapples?\b/, "apple", 150],
+  [/\bpears?\b/, "pear", 140],
+  [/\bbananas?\b/, "banana", 120],
+  [/\bavocados?\b/, "avocado", 170],
+  [/\bgarlic( bulbs?)?\b/, "bulb", 45],
+];
+const NOT_WHOLE = /\b(pur[eé]e|paste|sauce|juice|crisps?|chips|tinned|tin|canned|chopped|frozen|powder|oil|dried|soup|ketchup|chutney|pickled|jam|cherry|baby|mix|salad bag|fries)\b/;
+
+/** If people count this item (onions, carrots, lemons…), its name and typical weight each. */
+export function countableAs(name: string): { label: string; gramsEach: number } | null {
+  const n = name.toLowerCase();
+  if (NOT_WHOLE.test(n)) return null;
+  for (const [re, label, g] of COUNTABLE) {
+    if (re.test(n)) return { label, gramsEach: /\b(mini|midi|small)\b/.test(n) ? Math.round(g * 0.65) : g };
+  }
+  return null;
+}
+
+/** Turn a weighed amount of countable produce into a count: 1 kg of carrots -> 13 carrots. */
+export function asCount(name: string, amount: number, unit: Unit): { amount: number; unit: Unit; label: string | null } | null {
+  if (unit !== "g") return null;
+  const c = countableAs(name);
+  if (!c) return null;
+  return { amount: Math.max(1, Math.round(amount / c.gramsEach)), unit: "piece", label: c.label };
+}
