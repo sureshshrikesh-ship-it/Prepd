@@ -142,3 +142,25 @@ fieldset.field legend { padding: 0; margin-bottom: 6px; }
 .name-input:focus { outline: none; border-bottom-color: var(--accent); }
 .item.excluded { opacity: .45; }
 .check.ok + .panel { margin-top: 0; }
+/* Tonight */
+.recipe-list { display: flex; flex-direction: column; gap: 8px; }
+.recipe-card { display: flex; flex-direction: column; gap: 6px; text-align: left; width: 100%; padding: 12px 14px; border: 1.5px solid var(--line); border-radius: 14px; background: var(--bg); color: var(--fg); font: inherit; cursor: pointer; }
+.recipe-card:hover, .recipe-card:focus-visible { border-color: var(--accent); }
+.more summary { cursor: pointer; font-weight: 600; min-height: 44px; display: flex; align-items: center; }
+.ready-list { display: flex; flex-direction: column; border: 1.5px solid var(--line); border-radius: 14px; overflow: hidden; }
+.ready-row { display: flex; align-items: center; gap: 10px; padding: 10px 14px; border-top: 1px solid var(--line); cursor: pointer; flex-wrap: wrap; }
+.ready-row:first-child { border-top: 0; }
+.ready-row input { width: 22px; height: 22px; accent-color: var(--accent); flex-shrink: 0; }
+.ready-name { flex: 1; min-width: 140px; font-weight: 600; }
+.ready-name .muted { font-weight: 400; }
+.back { align-self: flex-start; }
+.stack-actions { flex-direction: column; }
+.cook { min-height: 60vh; }
+.step-text { font-size: 21px; line-height: 1.45; font-weight: 500; margin: 8px 0; }
+.chip.ing-chip { font-size: 14px; padding: 6px 10px; background: var(--accent-soft); color: var(--accent-text); }
+.timer { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 14px; border-radius: 14px; background: var(--surface); }
+.timer-time { font: 700 26px var(--mono); font-variant-numeric: tabular-nums; }
+.timer.done { background: var(--warn-soft); color: var(--warn-text); }
+.cook-nav { display: grid; grid-template-columns: 1fr 2fr; gap: 10px; margin-top: auto; }
+.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.chip.use-bad, .chip.use-warn, .chip.use-ok, .chip.use-calm { white-space: nowrap; }

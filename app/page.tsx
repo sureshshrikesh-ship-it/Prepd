@@ -7,17 +7,18 @@ import { SettingsPanel } from "@/components/SettingsPanel";
 import { ScanReview } from "@/components/ScanReview";
 import { PlanView } from "@/components/PlanView";
 import { FridgeView } from "@/components/FridgeView";
+import { TonightView } from "@/components/TonightView";
 import { DEFAULT_SETTINGS, type Plan, type Settings } from "@/lib/plan";
 import { addReceiptToPantry, callApi, money, supabase } from "@/lib/browser";
 
-type Tab = "week" | "fridge" | "shop" | "history" | "settings";
+type Tab = "tonight" | "week" | "fridge" | "shop" | "history" | "settings";
 type PlanRow = { id: string; created_at: string; plan: Plan; settings: Settings; receipt_id: string | null; cooked?: Record<string, string> };
 type ReceiptRow = { id: string; store: string | null; receipt_date: string | null; sum_of_lines: number | null; accuracy: number | null; created_at: string };
 
 export default function Home() {
   const [session, setSession] = useState<Session | null>(null);
   const [ready, setReady] = useState(false);
-  const [tab, setTab] = useState<Tab>("week");
+  const [tab, setTab] = useState<Tab>("tonight");
   const [plan, setPlan] = useState<PlanRow | null>(null);
   const [planning, setPlanning] = useState<{ text: string; err?: boolean } | null>(null);
   const [history, setHistory] = useState<{ receipts: ReceiptRow[]; plans: PlanRow[] }>({ receipts: [], plans: [] });
@@ -43,7 +44,6 @@ export default function Home() {
     setHistory({ plans: p, receipts: (receipts ?? []) as ReceiptRow[] });
     setPlan((cur) => cur ?? p[0] ?? null);
     if (set) setSettings((s) => ({ ...s, ...set }));
-    if (!p.length) setTab((t) => (t === "week" ? "shop" : t));
   }, []);
 
   useEffect(() => { if (session) loadLatest(); }, [session, loadLatest]);
@@ -79,7 +79,7 @@ export default function Home() {
       <header className="head">
         <div>
           <div className="eyebrow">Prepd · test build</div>
-          <h1>Snap your shop. Get your week.</h1>
+          <h1>Know what you have. Cook tonight.</h1>
         </div>
         {session && (
           <button className="link small" type="button" onClick={() => supabase().auth.signOut()}>Sign out</button>
@@ -89,10 +89,12 @@ export default function Home() {
       {!session ? <SignIn /> : (
         <>
           <nav className="tabs main" aria-label="Sections">
-            {([["week", "Week"], ["fridge", "Fridge"], ["shop", "Add food"], ["history", "History"], ["settings", "Settings"]] as [Tab, string][]).map(([k, label]) => (
+            {([["tonight", "Tonight"], ["week", "Week"], ["fridge", "Fridge"], ["shop", "Add food"], ["history", "History"], ["settings", "Settings"]] as [Tab, string][]).map(([k, label]) => (
               <button key={k} type="button" className={"tab" + (tab === k ? " on" : "")} aria-current={tab === k ? "page" : undefined} onClick={() => { setTab(k); setFridgeMsg(""); }}>{label}</button>
             ))}
           </nav>
+
+          {tab === "tonight" && <TonightView settings={settings} onAddFood={() => setTab("shop")} />}
 
           {tab === "week" && (
             <>
